@@ -7,7 +7,7 @@ In this project, your goal is to write a software pipeline to identify the lane 
 </div>
 
 ---
-(this model could be found [here](model.py#L153-L179)).
+
 ### Introduction
 The goals / steps of this project are the following:
 
@@ -56,46 +56,59 @@ undist_img = undistort(image, mtx, dist)
 ```
 The result is as follows:
 <div  align="center">    
-<img src="output_images/compare.png" width=60% height=60% border=0/>
+<img src="output_images/compare.png" width=100% height=100% border=0/>
 </div>
-To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
-![alt text][image2]
 
-#### 2. Describe how (and identify where in your code) you used color transforms, gradients or other methods to create a thresholded binary image.  Provide an example of a binary image result.
+#### 2. Perspective transform.
 
-I used a combination of color and gradient thresholds to generate a binary image (thresholding steps at lines # through # in `another_file.py`).  Here's an example of my output for this step.  (note: this is not actually from one of the test images)
-
-![alt text][image3]
-
-#### 3. Describe how (and identify where in your code) you performed a perspective transform and provide an example of a transformed image.
-
-The code for my perspective transform includes a function called `warper()`, which appears in lines 1 through 8 in the file `example.py` (output_images/examples/example.py) (or, for example, in the 3rd code cell of the IPython notebook).  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
+The code for my perspective transform includes a function called `perspective_Transform(image, src = None, dst = None)`, which appears in the cell (`In [7]`) of the IPython notebook located in "Advanced-Lane-Lines.ipynb".  The `warper()` function takes as inputs an image (`img`), as well as source (`src`) and destination (`dst`) points.  I chose the hardcode the source and destination points in the following manner:
 
 ```python
-src = np.float32(
-    [[(img_size[0] / 2) - 55, img_size[1] / 2 + 100],
-    [((img_size[0] / 6) - 10), img_size[1]],
-    [(img_size[0] * 5 / 6) + 60, img_size[1]],
-    [(img_size[0] / 2 + 55), img_size[1] / 2 + 100]])
-dst = np.float32(
-    [[(img_size[0] / 4), 0],
-    [(img_size[0] / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), img_size[1]],
-    [(img_size[0] * 3 / 4), 0]])
-```
+    img_size = (image.shape[1], image.shape[0])
+    corners = np.float32([[190,720],[589,457],[698,457],[1145,720]])
 
+    new_top_left=np.array([corners[0,0],0])
+    new_top_right=np.array([corners[3,0],0])
+    offset=[150,0]
+    dst = np.float32([corners[0]+offset,new_top_left+offset,new_top_right-offset ,corners[3]-offset])   
+    src = np.float32([corners[0],corners[1],corners[2],corners[3]])
+```
 This resulted in the following source and destination points:
 
 | Source        | Destination   | 
 |:-------------:|:-------------:| 
-| 585, 460      | 320, 0        | 
-| 203, 720      | 320, 720      |
-| 1127, 720     | 960, 720      |
-| 695, 460      | 960, 0        |
+| 190, 720      | 340, 720      | 
+| 589, 457      | 340, 0        |
+| 698, 457      | 995, 0        |
+| 1145, 720     | 995, 720      |
 
 I verified that my perspective transform was working as expected by drawing the `src` and `dst` points onto a test image and its warped counterpart to verify that the lines appear parallel in the warped image.
 
-![alt text][image4]
+<div  align="center">    
+<img src="output_images/Transform_compare.png" width=100% height=100% border=0/>
+</div>
+
+#### 3. Thresholded binary image. 
+
+- Step 1: Implement the basic method
+
+    - **Abs_sobel**:`abs_sobel_thresh(image, orient='x', sobel_kernel=3, thresh=(0, 255))`
+    
+    - **Magnitude of the Gradient**:`mag_thresh(image, sobel_kernel=3, mag_thresh=(0,255))`  
+    - **Direction of the Gradient**:`dir_threshold(image, sobel_kernel=3, thresh=(0., np.pi/2))`  
+    - **HLS Color Thresholding**`def hls_select(image, channel='h',thresh=(0, 255))`
+
+- Step 2: Combining Thresholds   
+I used `S` `L` color thresholds and gradient thresholds of `x` to generate a binary image. The corresponding code is `gradient_Threshold(img,thresh_dic)`.
+
+- Step 3: Morphological Transformations
+In order to reduce noise pixels, I used [cv2.erode()](https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_imgproc/py_morphological_ops/py_morphological_ops.html)
+to process binary image.
+
+Here's an example of my output for this step.  (note: this is not actually from one of the test images)
+<div  align="center">    
+<img src="output_images/Binary_compare.png" width=100% height=100% border=0/>
+</div>
 
 #### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
 
