@@ -31,20 +31,33 @@ In this step, We mainly use several functions.
 - `cv2.calibrateCamera()`: used to get `mtx`(camera matrix) and `dist`(distortion coefficients)
 - `cv2.undistort(img, mtx, dist, None, mtx)`: used to undistort a test image   
 
-The code for this step is contained in the cell (`In [2] & In [3]`) of the IPython notebook located in "Advanced-Lane-Lines.ipynb".  
-
-I start by preparing `object points`, which will be the (x, y, z) coordinates of the chessboard corners in the world. Here I am assuming the chessboard is fixed on the (x, y) plane at z=0, such that the object points are the same for each calibration image.  Thus, `objp` is just a replicated array of coordinates, and `objpoints` will be appended with a copy of it every time I successfully detect all chessboard corners in a test image.  `imgpoints` will be appended with the (x, y) pixel position of each of the corners in the image plane with each successful chessboard detection.  
-
-I then used the output `objpoints` and `imgpoints` to compute the camera calibration and distortion coefficients using the `cv2.calibrateCamera()` function.  I applied this distortion correction to the test image using the `cv2.undistort()` function and obtained this result: 
+The code for this step is contained in the cell (`In [2] & In [3]`) of the IPython notebook located in "Advanced-Lane-Lines.ipynb". The result is as follows:
 
 <div  align="center">    
-<img src="output_images/Calibration_result.png" width=50% height=50% border=0/>
+<img src="output_images/Calibration_result.png" width=90% height=90% border=0/>
 </div>
 
 ### Pipeline (single images)
 
-#### 1. Provide an example of a distortion-corrected image.
+#### 1. Correcting for Distortion.
 
+- Step 1: Load the data of camera matrix and distortion coefficients has been saved locally.
+```
+with open( "./output_images/wide_dist_pickle.p", "rb" ) as f:
+    data = pickle.load(f)   
+mtx = data['mtx']
+dist = data['dist']
+```
+- Step 2: Undistorting a test image.
+```
+img_path_list = glob.glob("./test_images/*.jpg")
+image = mpimg.imread(img_path_list[2])
+undist_img = undistort(image, mtx, dist)
+```
+The result is as follows:
+<div  align="center">    
+<img src="output_images/compare.png" width=60% height=60% border=0/>
+</div>
 To demonstrate this step, I will describe how I apply the distortion correction to one of the test images like this one:
 ![alt text][image2]
 
