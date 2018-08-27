@@ -101,7 +101,7 @@ I verified that my perspective transform was working as expected by drawing the 
 - Step 2: Combining Thresholds   
 I used `S` `L` color thresholds and gradient thresholds of `x` to generate a binary image. The corresponding code is `gradient_Threshold(img,thresh_dic)`.
 
-- Step 3: Morphological Transformations
+- Step 3: Morphological Transformations   
 In order to reduce noise pixels, I used [cv2.erode()](https://docs.opencv.org/3.0-beta/doc/py_tutorials/py_imgproc/py_morphological_ops/py_morphological_ops.html)
 to process binary image.
 
@@ -110,21 +110,51 @@ Here's an example of my output for this step.  (note: this is not actually from 
 <img src="output_images/Binary_compare.png" width=100% height=100% border=0/>
 </div>
 
-#### 4. Describe how (and identify where in your code) you identified lane-line pixels and fit their positions with a polynomial?
+#### 4. Finding the Lines and Fit a Polynomial
+- Step 1: Find the index of lane pixels   
+`leftx, lefty, rightx, righty, out_img = find_lane_pixels(binary_warped)`
+- Step 2: Fit a Polynomial   
+```python
+left_fit = np.polyfit(lefty, leftx, 2)   
+right_fit = np.polyfit(righty, rightx, 2)
+```
+- Step 3: Visualize the result  
 
-Then I did some other stuff and fit my lane lines with a 2nd order polynomial kinda like this:
+The result is as follows:
+<div  align="center">    
+<img src="output_images/fit_compare.png" width=100% height=100% border=0/>
+</div>
 
-![alt text][image5]
+#### 5. Measuring Curvature and The position of the vehicle with respect to center.
+- Step 1: Find the index of lane pixels   
+`leftx, lefty, rightx, righty, out_img = find_lane_pixels(binary_warped)`
+- Step 2: Calculate real-world lane curvature values  
+```python
+    # Generate x and y values for plotting
+    ploty = np.linspace(0, binary_warped.shape[0]-1, binary_warped.shape[0])
+    y_eval = np.max(ploty)
+    ### TO-DO: Fit a second order polynomial to each using `np.polyfit` ###
+    left_fit_cr = np.polyfit(lefty*ym_per_pix, leftx*xm_per_pix, 2)
+    right_fit_cr = np.polyfit(righty*ym_per_pix, rightx*xm_per_pix, 2)
+    left_curverad = (1 + (2*left_fit_cr[0]*y_eval*ym_per_pix + left_fit_cr[1])**2)**1.5 / np.absolute(2*left_fit_cr[0])  ## Implement the calculation of the left line here
+    right_curverad = (1 + (2*right_fit_cr[0]*y_eval*ym_per_pix + right_fit_cr[1])**2)**1.5 / np.absolute(2*right_fit_cr[0])  ## Implement the calculation of the right line here
+```
+- Step 3: Calculate the distance from the center of the lane.  
+```python
+    car_position = binary_warped.shape[1]/2 * xm_per_pix
+    h = binary_warped.shape[0] * ym_per_pix
+    l_fit_x_int = left_fit_cr[0]*h**2 + left_fit_cr[1]*h + left_fit_cr[2]
+    r_fit_x_int = right_fit_cr[0]*h**2 + right_fit_cr[1]*h + right_fit_cr[2]
+    lane_center_position = (r_fit_x_int + l_fit_x_int) /2
+    center_dist = (car_position - lane_center_position)
+```
+- Step 4: Visualize the result.
 
-#### 5. Describe how (and identify where in your code) you calculated the radius of curvature of the lane and the position of the vehicle with respect to center.
+I implemented this step in lines # through # in my code in `Advanced-Lane-Lines.ipynb` in the function `drawing_image()`.  Here is an example of my result on a test image:
 
-I did this in lines # through # in my code in `my_other_file.py`
-
-#### 6. Provide an example image of your result plotted back down onto the road such that the lane area is identified clearly.
-
-I implemented this step in lines # through # in my code in `yet_another_file.py` in the function `map_lane()`.  Here is an example of my result on a test image:
-
-![alt text][image6]
+<div  align="center">    
+<img src="output_images/result_img.png" width=100% height=100% border=0/>
+</div>
 
 ---
 
@@ -132,7 +162,7 @@ I implemented this step in lines # through # in my code in `yet_another_file.py`
 
 #### 1. Provide a link to your final video output.  Your pipeline should perform reasonably well on the entire project video (wobbly lines are ok but no catastrophic failures that would cause the car to drive off the road!).
 
-Here's a [link to my video result](./project_video.mp4)
+Here's a [link to my video result](./processed_project_video.mp4)
 
 ---
 
@@ -141,3 +171,9 @@ Here's a [link to my video result](./project_video.mp4)
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
 Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+
+- Opencv Morphological Transformations  
+Erosion and Dilation of a thresholded binary image to reduce noise pixels and enhance lane line pixels.
+
+- Problems  
+The code of Video pipeline isn't good performance on `challenge_video.mp4`, there may be a problem with the part of combining thresholds. Need to tune combining thresholds for different scenarios.
